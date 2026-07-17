@@ -42,14 +42,15 @@ layers = [
    reluLayer
    averagePooling2dLayer(2,'Stride',1) 
 
-   % Classifier head — 3 output classes (BMP2, BTR70, T72)
+   % Classifier head — 3 output classes
    fullyConnectedLayer(3)
    softmaxLayer
    classificationLayer()
  ]
-% analyzeNetwork(net)
-% Training
-% opt=trainingOptions('sgdm','Maxepoch',10,'InitialLearnRate',0.0001,'Plots','training-progress');
+
+% =========================================================
+% Training Options — SGD with Momentum
+% =========================================================
 
 opt = trainingOptions('sgdm', ... % Stochastic Gradient Descent with Momentum
     'MaxEpochs',10, ... % Maximum number of training epochs   
@@ -64,25 +65,28 @@ opt = trainingOptions('sgdm', ... % Stochastic Gradient Descent with Momentum
     'MiniBatchSize', 16, ... % Size of mini-batches for each iteration
     'Verbose', true); % Display information during training
 
-
+% Train the network and save the model
 [training,info]=trainNetwork(augmentedImds,layers,opt)
-
 save('LSARNet.mat', 'training');
 
-%h=findall(groot,'Type','Figure');
-%h.MenuBar='figure';
-%h.MenuBar='none';
-%close(h); %close h after saving the fig
 
+
+% ===================Visualisation Code==============================================================================
+% Comment out any section below to skip that visualisation.
+% Change the layer name (e.g. 'conv_1', 'conv_2') or layer
+% index (e.g. Layers(2), Layers(6)) to inspect different layers.
+% =========================================================
+
+% Extract feature activations from first convolutional layer
   imgpath="C:\Users\mahsu\OneDrive\Desktop\SARATR\Dataset\SOC\Test\T72\HB03333.tif";
   img=imread(imgpath);
   act = activations(training, img, 'conv_1');% to get features for layers
-%  montage(act);
+% montage(act); % uncomment to display all feature maps as a grid
 
- % =============HEat Map Code-------------------------
+ % =============HEat Maps-------------------------
  imgpath="C:\Users\mahsu\OneDrive\Desktop\SARATR\Dataset\SOC\Test\T72\HB03333.tif";
   img=imread(imgpath);
-  act = activations(training, img, 'conv_2');% to get features for layers
+  act = activations(training, img, 'conv_2');
  numFeatureMaps = size(act, 3);
  figure;
 for i = 1:numFeatureMaps
@@ -93,7 +97,7 @@ for i = 1:numFeatureMaps
     subplot(ceil(numFeatureMaps / 4), 4, i); % Adjust layout as needed
     imagesc(feature_map); % Display the feature map
     colorbar; % Add a color bar
-    colormap('jet'); % Use the 'jet' colormap for better visualization
+    colormap('jet'); % 'jet' colormap for better visualization
     title(['Feature Map ' num2str(i)]);
     xlabel('X-axis');
     ylabel('Y-axis');
@@ -103,22 +107,22 @@ end
 sgtitle('HeatMap Layer conv_2');
  
 
-% =============Visualizing Convolutional Kernels-------------------------
+% =============Visualizing Convolutional Kernels---------------------------------
+% Helps interpret what patterns each filter has learnt
 
-% Display kernels of a convolutional layer
-kernels = training.Layers(6).Weights; % Assuming 2nd layer is convolutional - conv1=2 and conv2=6
+kernels = training.Layers(6).Weights;
 numKernels = size(kernels, 4);
 figure;
 for i = 1:numKernels
     subplot(ceil(numKernels / 8), 8, i);
-    imagesc(kernels(:, :, 1, i)); % Display the i-th kernel (assuming single-channel input)
+    imagesc(kernels(:, :, 1, i));
     colormap('gray');
     colorbar;
     title(['Kernel ' num2str(i)]);
 end
 
-%============================================
-% Load a sample image
+%========================Activation Map Visualisation=====================================================
+
 img = imread("C:\Users\mahsu\OneDrive\Desktop\SARATR\Dataset\SOC\Test\T72\HB03333.tif");
 img = imresize(img, [128 128]); % Resize to match input size if needed
 
@@ -137,7 +141,3 @@ for i = 1:numKernels
     colorbar;
     title(['Kernel ' num2str(i)]);
 end
-
-
- 
-%save training;
