@@ -1,56 +1,51 @@
+% =========================================================
+% LSARNet Training Script
+% =========================================================
+
 clc
 clear all
 close all
+
+% Load training images
 dataset_path = 'C:\Users\mahsu\OneDrive\Desktop\SARATR\Dataset\SOC1'
 data=fullfile(dataset_path,'Train');
 trainData=imageDatastore(data,'IncludeSubfolders',true,'LabelSource','foldernames');
 count=trainData.countEachLabel;
 
-
+% Define augmentation strategy — random rotation to improve generalisation
 augmenter = imageDataAugmenter( ...
    'RandRotation', [-10, 10] ...  
 );
  
-%     'RandXTranslation', [-10, 10], ...
-%     'RandYTranslation', [-10, 10] ...
-%     'RandXReflection', true, %...
-%     'RandYReflection', true, %...
-%     'RandScale', [0.8, 1.2]);
-
-
-
+% Split dataset into 80% training and 20% validation
 [trainingdata validdata]= splitEachLabel(trainData,0.8,'randomized');
 
-% Create an augmentedImageDatastore with the augmentation parameters
+% Apply augmentation and resize all images to 128x128 greyscale
 augmentedImds = augmentedImageDatastore([128 128 1], trainingdata, 'DataAugmentation', augmenter);
 
-%load network
-
-%net=alexnet;
-%layers=net.Layers;
+% =========================================================
+% Define LSARNet Architecture
+% Two convolutional blocks followed by a fully connected classifier
+% =========================================================
 layers = [
-    imageInputLayer([128 128 1]) 
+   imageInputLayer([128 128 1]) 
         
-    convolution2dLayer(6,8,'Padding','same')     
-    batchNormalizationLayer 
-    reluLayer
-    averagePooling2dLayer(2,'Stride',1) 
-        
-         convolution2dLayer(6,16,'Padding','same')                    
-         batchNormalizationLayer 
-         reluLayer
-         averagePooling2dLayer(2,'Stride',1) 
-        
- 
-%  net.Layers(2:end-3)
-%  fullyConnectedLayer(3)
-%  net.Layers(18:19)
-%  fullyConnectedLayer(3)
-%  net.Layers(21:22)
-  
-fullyConnectedLayer(3)
-  softmaxLayer
-  classificationLayer()
+   % First convolutional block
+   convolution2dLayer(6,8,'Padding','same')     
+   batchNormalizationLayer 
+   reluLayer
+   averagePooling2dLayer(2,'Stride',1) 
+
+   % Second convolutional block
+   convolution2dLayer(6,16,'Padding','same')                    
+   batchNormalizationLayer 
+   reluLayer
+   averagePooling2dLayer(2,'Stride',1) 
+
+   % Classifier head — 3 output classes (BMP2, BTR70, T72)
+   fullyConnectedLayer(3)
+   softmaxLayer
+   classificationLayer()
  ]
 % analyzeNetwork(net)
 % Training
